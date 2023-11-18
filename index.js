@@ -27,6 +27,7 @@ const playGameButtonElement = document.getElementById("playGame");
 // initialize new game method, with stacked cards on the first cell
 const colappsedGridAreaTemplate = '"a a" "a a"';
 const cardCollectionCellClass = ".card-pos-a";
+const numCards = cardObjectDefinitions.length;
 
 /* {--Create cards block--} */
 
@@ -35,9 +36,9 @@ const cardBackImgPath = "/images/card-back-Blue.png";
 // global const of card container element useful to change the grid positions
 const cardContainerElement = document.querySelector(".card-container");
 
-const initializedCardPositions = (card) => {
+const initializeCardPositions = (card) => {
   cardPositions.push(card.id);
-}
+};
 
 // createElement method
 const createElement = (elementType) => {
@@ -132,11 +133,89 @@ const createCard = (cardItemn) => {
   addCardToGridCell(cardElement);
 
   // each initialial position of the card is stored in the cardPositions array
-  initializedCardPositions(cardElement);
+  initializeCardPositions(cardElement);
 };
 
 const createCards = () => {
   cardObjectDefinitions.forEach((cardItem) => createCard(cardItem));
+};
+
+//method to randomize card positions
+const randomizeCardPositions = () => {
+  const random1 = Math.floor(Math.random() * numCards) + 1;
+  const random2 = Math.floor(Math.random() * numCards) + 1;
+  const temp = cardPositions[random1 - 1];
+  cardPositions[random1 - 1] = cardPositions[random2 - 1];
+  cardPositions[random2 - 1] = temp;
+
+  console.log(cardPositions);
+};
+
+const addCardsToAppropriateGridCell = () => {
+  cards.forEach((card) => {
+    addCardToGridCell(card);
+  });
+};
+
+const returnGridAreasMappedToCardPositions = () => {
+  let firstPart = "",
+    secondPart = "";
+  areas = "";
+
+  cards.forEach((_, index) => {
+    switch (cardPositions[index]) {
+      case "1":
+        areas = areas + "a ";
+        break;
+      case "2":
+        areas = areas + "b ";
+        break;
+      case "3":
+        areas = areas + "c ";
+        break;
+      case "4":
+        areas = areas + "d ";
+        break;
+    }
+    if (index == 1) {
+      firstPart = areas.substring(0, areas.length - 1);
+      areas = "";
+    } else if (index == 3) {
+      secondPart = areas.substring(0, areas.length - 1);
+    }
+  });
+  return `"${firstPart}" "${secondPart}"`;
+};
+
+// transform grid area method to collapse the cards in a single cell
+const transformGridArea = (areas) => {
+  cardContainerElement.style.gridTemplateAreas = areas;
+};
+
+const dealCards = () => {
+  // restore the grid to contain 4 grid cells and add the card back to its position in the grid
+  addCardsToAppropriateGridCell();
+  // return grid template area value that contains the grid area based on the randomization provided in the cardsPositions array
+  const areasTemplate = returnGridAreasMappedToCardPositions();
+  // transform the grid area to the template value
+  transformGridArea(areasTemplate);
+};
+
+// methods to shuffle the cards
+const shuffleCards = () => {
+  let shuffleCount = 0;
+
+  const shuffle = () => {
+    randomizeCardPositions();
+    if (shuffleCount == 500) {
+      clearInterval(id);
+      dealCards();
+    } else {
+      shuffleCount++;
+    }
+  };
+  // every 12 miliseconds the shuffle method will be called
+  const id = setInterval(shuffle, 12);
 };
 
 /* {--Game preparation block--} */
@@ -147,11 +226,6 @@ const loadGame = () => {
   cards = document.querySelectorAll(".card");
 
   playGameButtonElement.addEventListener("click", () => startGame());
-};
-
-// transofrm grid area method to collapse the cards in a single cell
-const transformGridArea = (gridAreaTemplate) => {
-  cardContainerElement.style.gridTemplateAreas = gridAreaTemplate;
 };
 
 // method to add cards to the grid area cell, because the grid consiste in only one cell
@@ -186,32 +260,6 @@ const flipCards = (flipToBack) => {
   });
 };
 
-//method to randomize card positions
-const randomizeCardPositions = () => {
-  const random1 = Math.floor(Math.random() * cardObjectDefinitions.length) + 1;
-  const random2 = Math.floor(Math.random() * cardObjectDefinitions.length) + 1;
-  const temp = cardPositions[random1 - 1];
-  cardPositions[random1 - 1] = cardPositions[random2 - 1];
-  cardPositions[random2 - 1] = temp;
-};
-
-// methods to shuffle the cards
-const shuffleCards = () => {
-  // every 12 miliseconds the shuffle method will be called
-  const id = setInterval(shuffle, 12);
-  let shuffleCount = 0;
-
-  function shuffle() {
-    randomizeCardPositions();
-    if (shuffleCount == 500) {
-      clearInterval(id);
-      dealCards()
-    } else {
-      shuffleCount++;
-    }
-  }
-};
-
 /* { -- Game control block -- } */
 
 const startGame = () => {
@@ -225,7 +273,9 @@ const initializeNewGame = () => {};
 const startRound = () => {
   initializeNewRound();
   collectCards();
-  flipCards(true);
+  //we want our cards to begin with their back facing the user
+  //flipCards(true);
+  shuffleCards();
 };
 
 const initializeNewRound = () => {};
