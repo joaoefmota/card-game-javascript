@@ -18,16 +18,33 @@ const cardObjectDefinitions = [
 ];
 
 // global variable to store references to card elements
-let cards = [];
-let cardPositions = [];
+let cards = [],
+  cardPositions = [];
+
+// global variables to control game flow
+let gameInProgress = false,
+  shufflingInProgress = false,
+  cardsRevealed = false,
+  roundNumber = 0,
+  maxRounds = 4,
+  score = 0;
 
 // start game button element global const
 const playGameButtonElement = document.getElementById("playGame");
 
 // initialize new game method, with stacked cards on the first cell
-const colappsedGridAreaTemplate = '"a a" "a a"';
-const cardCollectionCellClass = ".card-pos-a";
-const numCards = cardObjectDefinitions.length;
+const colappsedGridAreaTemplate = '"a a" "a a"',
+  cardCollectionCellClass = ".card-pos-a",
+  numCards = cardObjectDefinitions.length,
+  aceId = 4,
+  currentGameStatusElement = document.querySelector(".current-status"),
+  scoreContainerElement = document.querySelector(".header-score-container"),
+  scoreElement = document.querySelector(".score"),
+  roundContainerElement = document.querySelector(".header-round-container"),
+  roundElement = document.querySelector(".round"),
+  winColor = "green",
+  loseColor = "red",
+  primaryColor = "black";
 
 /* {--Create cards block--} */
 
@@ -134,6 +151,8 @@ const createCard = (cardItemn) => {
 
   // each initialial position of the card is stored in the cardPositions array
   initializeCardPositions(cardElement);
+
+  attachClickEventHandlerToCard(cardElement);
 };
 
 const createCards = () => {
@@ -147,8 +166,6 @@ const randomizeCardPositions = () => {
   const temp = cardPositions[random1 - 1];
   cardPositions[random1 - 1] = cardPositions[random2 - 1];
   cardPositions[random2 - 1] = temp;
-
-  console.log(cardPositions);
 };
 
 const addCardsToAppropriateGridCell = () => {
@@ -159,8 +176,8 @@ const addCardsToAppropriateGridCell = () => {
 
 const returnGridAreasMappedToCardPositions = () => {
   let firstPart = "",
-    secondPart = "";
-  areas = "";
+    secondPart = "",
+    areas = "";
 
   cards.forEach((_, index) => {
     switch (cardPositions[index]) {
@@ -209,7 +226,14 @@ const shuffleCards = () => {
     randomizeCardPositions();
     if (shuffleCount == 500) {
       clearInterval(id);
+      shufflingInProgress = false;
       dealCards();
+      updateStatusElement(
+        currentGameStatusElement,
+        "block",
+        primaryColor,
+        "Please click the card that you think is the Ace"
+      );
     } else {
       shuffleCount++;
     }
@@ -226,6 +250,9 @@ const loadGame = () => {
   cards = document.querySelectorAll(".card");
 
   playGameButtonElement.addEventListener("click", () => startGame());
+
+  updateStatusElement(scoreContainerElement, "none");
+  updateStatusElement(roundContainerElement, "none");
 };
 
 // method to add cards to the grid area cell, because the grid consiste in only one cell
@@ -262,22 +289,172 @@ const flipCards = (flipToBack) => {
 
 /* { -- Game control block -- } */
 
+const calculateToAdd = (roundNumber) => {
+  switch (roundNumber) {
+    case 1:
+      return 100;
+    case 2:
+      return 50;
+    case 3:
+      return 25;
+    default:
+      10;
+  }
+};
+
+const updateScore = () => {
+  // figures out how many points the user did got when calling the calculateScoreToAdd method
+  const scoreToAdd = calculateToAdd(roundNumber);
+  score = score + scoreToAdd;
+  updateStatusElement(
+    scoreElement,
+    "block",
+    primaryColor,
+    `Score <span class="badge">${score}</span>`
+  );
+};
+
+const updateStatusElement = (element, display, color = "", innerHTML = "") => {
+  element.style.display = display;
+  if (color && innerHTML) {
+    element.style.color = color;
+    element.innerHTML = innerHTML;
+  }
+};
+
+const outputChoiceFeedback = (hit) => {
+  return hit
+    ? updateStatusElement(
+        currentGameStatusElement,
+        "block",
+        winColor,
+        "Hit!! - Well done!! :)"
+      )
+    : updateStatusElement(
+        currentGameStatusElement,
+        "block",
+        loseColor,
+        "Missed!! :("
+      );
+};
+
+const evaluateCardChoise = (card) => {
+  Number(card.id) === aceId
+    ? (outputChoiceFeedback(true), updateScore())
+    : outputChoiceFeedback(false);
+};
+
+const initializeNewGame = () => {
+  score = 0;
+  roundNumber = 0;
+
+  shufflingInProgress = false;
+
+  updateStatusElement(scoreContainerElement, "flex");
+  updateStatusElement(roundContainerElement, "flex");
+
+  updateStatusElement(
+    scoreElement,
+    "block",
+    primaryColor,
+    `Score <span class="badge">${score}</span>`
+  );
+  updateStatusElement(
+    roundElement,
+    "block",
+    primaryColor,
+    `Round <span class="badge">${roundNumber}</span>`
+  );
+};
+
+const initializeNewRound = () => {
+  roundNumber++;
+  playGameButtonElement.disabled = true;
+  gameInProgress = true;
+  shufflingInProgress = true;
+  cardsRevealed = false;
+
+  updateStatusElement(
+    currentGameStatusElement,
+    "block",
+    primaryColor,
+    "Shuffling..."
+  );
+  updateStatusElement(
+    roundElement,
+    "block",
+    primaryColor,
+    `Round <span class="badge">${roundNumber}</span>`
+  );
+};
+
+const startRound = () => {
+  initializeNewRound();
+  collectCards();
+  //we want our cards to begin with their back facing the user
+  flipCards(true);
+  shuffleCards();
+};
+
 const startGame = () => {
   // definition for a method that initializes a new game
   initializeNewGame();
   startRound();
 };
 
-const initializeNewGame = () => {};
+const gameOver = () => {
+  updateStatusElement(scoreContainerElement, "none");
+  updateStatusElement(roundContainerElement, "none");
 
-const startRound = () => {
-  initializeNewRound();
-  collectCards();
-  //we want our cards to begin with their back facing the user
-  //flipCards(true);
-  shuffleCards();
+  const gameOverMessage = `Game Over! Score - <span class="badge">${score}</span> Click "Play Game" to play again`;
+
+  updateStatusElement(
+    currentGameStatusElement,
+    "block",
+    primaryColor,
+    gameOverMessage
+  );
+
+  playGameButtonElement.disabled = false;
 };
 
-const initializeNewRound = () => {};
+const endRound = () => {
+  setTimeout(() => {
+    if (roundNumber === maxRounds) {
+      gameOver();
+      return;
+    } else {
+      startRound();
+    }
+  }, 3000);
+};
+
+const canChooseCard = () => {
+  return gameInProgress == true && !shufflingInProgress && !cardsRevealed;
+};
+
+const chooseCard = (card) => {
+  if (canChooseCard()) {
+    evaluateCardChoise(card);
+    flipCard(card, false);
+
+    setTimeout(() => {
+      flipCards(false);
+      updateStatusElement(
+        currentGameStatusElement,
+        "block",
+        primaryColor,
+        "Card positions revealed"
+      );
+      endRound();
+    }, 3000);
+    cardsRevealed = true;
+  }
+};
+
+// we need an event listener for each card to know which card the user has clicked on when choosing a card
+const attachClickEventHandlerToCard = (card) => {
+  card.addEventListener("click", () => chooseCard(card));
+};
 
 loadGame();

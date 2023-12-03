@@ -14,7 +14,7 @@ main {
   height: 55%;
   display: flex;
   justify-content: center;
-  border: 1px solid black;
+  /*border: 1px solid black;*/
 }
 
 .card-container {
@@ -29,27 +29,30 @@ main {
   grid-template-areas:
     "a b"
     "c d";
-    border: 1px solid black;
+  /*border: 1px solid black;*/
 }
 
 .card-pos-a {
   grid-area: a;
-  border: 1px solid black;
+  /*border: 1px solid black;*/
 }
 .card-pos-b {
   grid-area: b;
-  border: 1px solid black;
+  /*border: 1px solid black;*/
 }
 .card-pos-c {
   grid-area: c;
-  border: 1px solid black;
+  /*border: 1px solid black;*/
 }
 .card-pos-d {
   grid-area: d;
-  border: 1px solid black;
+  /*border: 1px solid black;*/
 }
 
-.card-pos-a, .card-pos-b, .card-pos-c, .card-pos-d {
+.card-pos-a,
+.card-pos-b,
+.card-pos-c,
+.card-pos-d {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -94,8 +97,6 @@ main {
   transform: rotateY(180deg);
 }
 
-
 .card:hover .card-inner {
   transform: rotateY(180deg);
 }
-
