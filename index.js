@@ -27,7 +27,10 @@ let gameInProgress = false,
   cardsRevealed = false,
   roundNumber = 0,
   maxRounds = 4,
-  score = 0;
+  score = 0,
+  gameObj = {};
+
+const localStorageGameKey = "HTA";
 
 // start game button element global const
 const playGameButtonElement = document.getElementById("playGame");
@@ -398,6 +401,8 @@ const initializeNewGame = () => {
   score = 0;
   roundNumber = 0;
 
+  checkForIncompleteGame();
+
   shufflingInProgress = false;
 
   updateStatusElement(scoreContainerElement, "flex");
@@ -446,6 +451,20 @@ const startRound = () => {
   shuffleCards();
 };
 
+const checkForIncompleteGame = () => {
+  const serializedGameObject =
+    getGameObjectFromLocalStorage(localStorageGameKey);
+  if (serializedGameObject) {
+    gameObj = getObjectFromJSON(serializedGameObject);
+    if (gameObj.rounds >= maxRounds) {
+      removeLocalStorageItem(localStorageGameKey);
+    } else if (confirm("Would you like to continue with you last game?")) {
+      score = gameObj.score;
+      roundNumber = gameObj.round;
+    }
+  }
+};
+
 const startGame = () => {
   // definition for a method that initializes a new game
   initializeNewGame();
@@ -472,7 +491,7 @@ const endRound = () => {
   setTimeout(() => {
     if (roundNumber === maxRounds) {
       gameOver();
-      return;
+      removeLocalStorageItem(localStorageGameKey);
     } else {
       startRound();
     }
@@ -486,6 +505,7 @@ const canChooseCard = () => {
 const chooseCard = (card) => {
   if (canChooseCard()) {
     evaluateCardChoise(card);
+    saveGameObjectToLocalStorage(score, roundNumber);
     flipCard(card, false);
 
     setTimeout(() => {
@@ -508,3 +528,38 @@ const attachClickEventHandlerToCard = (card) => {
 };
 
 loadGame();
+
+//localstorage
+
+const getSerializedObjectAsJSON = (obj) => {
+  return JSON.stringify(obj);
+};
+
+const getObjectFromJSON = (json) => {
+  return JSON.parse(json);
+};
+
+const updateLocalStorageItem = (key, value) => {
+  return localStorage.setItem(key, value);
+};
+
+const removeLocalStorageItem = (key) => {
+  return localStorage.removeItem(key);
+};
+
+const updateGameObject = (score, round) => {
+  gameObj.score = score;
+  gameObj.round = round;
+};
+
+const getGameObjectFromLocalStorage = (key) => {
+  return localStorage.getItem(key);
+};
+
+const saveGameObjectToLocalStorage = (score, round) => {
+  updateGameObject(score, roundNumber);
+  updateLocalStorageItem(
+    localStorageGameKey,
+    getSerializedObjectAsJSON(gameObj)
+  );
+};
