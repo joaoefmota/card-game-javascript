@@ -118,6 +118,7 @@ const createCard = (cardItemn) => {
 
   // add class and id to card element
   addClassToElement(cardElement, "card");
+  addClassToElement(cardElement, "fly-in");
   addIdToElement(cardElement, cardItemn.id);
 
   // add class to inner card element
@@ -218,15 +219,62 @@ const dealCards = () => {
   transformGridArea(areasTemplate);
 };
 
+const cardFlyInEffect = () => {
+  let cardCount = 0,
+    count = 0;
+  const flyIn = () => {
+    count++;
+    if (cardCount === numCards) {
+      clearInterval(id);
+      playGameButtonElement.style.display = "inline-block";
+    }
+    if (count === 1 || count === 250 || count === 500 || count === 750) {
+      cardCount++;
+      let card = document.getElementById(cardCount);
+      card.classList.remove("fly-in");
+    }
+  };
+  const id = setInterval(flyIn, 5);
+};
+
+const removeShuffleClass = () => {
+  cards.forEach((card) => {
+    card.classList.remove("shuffle-left");
+    card.classList.remove("shuffle-right");
+  });
+};
+
+const animateShuffle = (shuffleCount) => {
+  const random1 = Math.floor(Math.random() * numCards) + 1;
+  const random2 = Math.floor(Math.random() * numCards) + 1;
+
+  let card1 = document.getElementById(random1);
+  let card2 = document.getElementById(random2);
+
+  if (shuffleCount % 4 === 0) {
+    card1.classList.toggle("shuffle-left");
+    card1.style.zIndex = "100";
+  }
+
+  if (shuffleCount % 10 === 0) {
+    card2.classList.toggle("shuffle-right");
+    card2.style.zIndex = "200";
+  }
+};
+
 // methods to shuffle the cards
 const shuffleCards = () => {
   let shuffleCount = 0;
 
   const shuffle = () => {
     randomizeCardPositions();
+
+    animateShuffle(shuffleCount);
+
     if (shuffleCount == 500) {
       clearInterval(id);
       shufflingInProgress = false;
+      removeShuffleClass();
       dealCards();
       updateStatusElement(
         currentGameStatusElement,
@@ -248,6 +296,8 @@ const loadGame = () => {
   createCards();
 
   cards = document.querySelectorAll(".card");
+
+  cardFlyInEffect();
 
   playGameButtonElement.addEventListener("click", () => startGame());
 
